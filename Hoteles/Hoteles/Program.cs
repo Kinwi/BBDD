@@ -42,7 +42,7 @@ namespace Hoteles
                     break;
 
                 case 4:
-                    //checkOut(); //Metodo para realizar el CheckOut
+                    checkOut(); //Metodo para realizar el CheckOut
                     break;
 
                 case 5:
@@ -75,7 +75,7 @@ namespace Hoteles
             string registryQuery = $"INSERT INTO Clients (Firstname,Surname,DNI) VALUES ('{name}','{surname}','{dni}')";
             SqlCommand command = new SqlCommand(registryQuery, connection);
             connection.Open();
-            command.ExecuteNonQuery();
+           
 
             if (command.ExecuteNonQuery() > 0)
             {
@@ -139,27 +139,28 @@ namespace Hoteles
             SqlDataReader reader = command.ExecuteReader();
             if (reader.Read())
             {
+                int idClient=( Convert.ToInt32(reader[3].ToString())); // ID DEL CLIENTE
+
                 connection.Close();
                 string roomsAvailable = $"SELECT  * FROM Rooms WHERE Available = 'Y'";
                 SqlCommand command1 = new SqlCommand(roomsAvailable, connection);
                 connection.Open();
                 SqlDataReader reader1 = command1.ExecuteReader();
-
                 while (reader1.Read())
                 {
                     Console.WriteLine($"{reader1[0].ToString()} {reader1[1].ToString()}");
-                    
-
+                     
                 }
-                    connection.Close();
+                   connection.Close();
                     connection.Open();
-                    Console.WriteLine("Introduca la habitacion a reservar");
-                    string roomAvailable = Console.ReadLine();
-                    string updateStateRoom = $"UPDATE Rooms SET Available = 'N' WHERE ID = '{roomAvailable}'";
+                     Console.WriteLine("Introduca la habitacion a reservar");
+                    string roomReserve = Console.ReadLine();
+                    DateTime dateCheckIn = DateTime.Now;
+                    string updateStateRoom = $"UPDATE Rooms SET Available = 'N' WHERE ID = '{roomReserve}' INSERT INTO Books (IdClient,IdRoom,CheckInDate) VALUES ('{idClient}','{roomReserve}','{dateCheckIn}')";
+   
                     SqlCommand command2 = new SqlCommand(updateStateRoom, connection);
                     Console.WriteLine(command2.ExecuteNonQuery());
-
-                connection.Close();
+                     connection.Close();
 
             }
             else
@@ -170,6 +171,62 @@ namespace Hoteles
             }
 
         }
+
+        // CHECKOUT --------------------
+
+        public static void checkOut() {
+
+            Console.WriteLine("Introduzca su DNI");
+            string DNI = Console.ReadLine();
+            string editSelect = $"SELECT  *  FROM Clients WHERE DNI = '{DNI}' ";
+            SqlCommand command = new SqlCommand(editSelect, connection);
+            connection.Open();
+            SqlDataReader reader = command.ExecuteReader();
+           
+            if(reader.Read())
+            {
+                int idClient = (Convert.ToInt32(reader[3].ToString())); // ID DEL CLIENTE
+                connection.Close();
+                DateTime dateCheckOut = DateTime.Now;
+                string datosReserva = $"SELECT * FROM BOOKS WHERE IDClient = (SELECT ID FROM Clients WHERE DNI = '{DNI}')";
+                SqlCommand command1 = new SqlCommand(datosReserva, connection);
+                connection.Open();
+                SqlDataReader reader1 = command1.ExecuteReader();
+                string idHabitacion = "";
+                while (reader1.Read())
+                {
+                    Console.WriteLine("Datos de la reserva del cliente  " + DNI);
+                    Console.WriteLine();
+                    Console.WriteLine(reader1[0].ToString());
+                    Console.WriteLine(reader1[1].ToString());
+                    Console.WriteLine(reader1[2].ToString());
+                    Console.WriteLine(reader1[3].ToString());
+                    idHabitacion =reader1[2].ToString();
+
+                }
+  
+               connection.Close();
+                connection.Open();
+                DateTime checkOut = DateTime.Now;
+                string actualizar = $"UPDATE Books SET CheckOutDate = '{checkOut}' WHERE CheckOutDate IS NULL AND IDClient ='{idClient}'  UPDATE Rooms SET Available = 'Y' WHERE ID = '{idHabitacion}'";
+                SqlCommand command2 = new SqlCommand(actualizar, connection);
+                Console.WriteLine(command2.ExecuteNonQuery());
+                connection.Close();
+            }
+            
+
+
+            else
+            {
+                Console.WriteLine("El cliente no existe");
+                connection.Close();
+                
+            }
+
+
+        }
+
+
 
 
 
